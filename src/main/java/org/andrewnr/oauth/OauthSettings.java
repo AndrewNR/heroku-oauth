@@ -16,7 +16,7 @@ public class OauthSettings {
   public static String HOST = "https://login.salesforce.com";
   
   // URLs used by the application
-  public static String URL_CALLBACK = "https://andrewnr-oauth.herokuapp.com/callback";
+  public static String URL_CALLBACK = "https://andrewnr-heroku-oauth.herokuapp.com/callback";
   public static String URL_API_LOGIN = HOST+"/services/OAuth/c/17.0";
   public static String URL_AUTHORIZATION = HOST+"/setup/secur/RemoteAccessAuthorizationPage.apexp";  
   public static String URL_AUTH_ENDPOINT = HOST+"/services/Soap/u/17.0";
