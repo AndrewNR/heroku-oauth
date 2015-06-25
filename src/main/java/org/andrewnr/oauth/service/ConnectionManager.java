@@ -1,25 +1,16 @@
 package org.andrewnr.oauth.service;
 
 import java.util.logging.Logger;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.cache.Cache;
-import javax.cache.CacheException;
-import javax.cache.CacheFactory;
-import javax.cache.CacheManager;
 
 import org.andrewnr.oauth.OauthSettings;
 import org.andrewnr.oauth.SfdcCredentials;
 import org.andrewnr.oauth.model.AccessCredentials;
-import org.andrewnr.oauth.model.CredentialsStorage;
+import org.andrewnr.oauth.model.MemoryCache;
 import org.andrewnr.oauth.utils.OauthHelperUtils;
 
 import net.oauth.OAuthAccessor;
 import net.oauth.OAuthConsumer;
 
-import com.google.appengine.api.memcache.MemcacheService;
-import com.google.appengine.api.memcache.stdimpl.GCacheFactory;
 import com.sforce.soap.partner.Connector;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.ws.ConnectionException;
@@ -38,7 +29,7 @@ public class ConnectionManager {
 	private static final String KEY_SESSION = "sessionId";
 	private static ConnectionManager ref;
 	private PartnerConnection connection;
-	Cache cache = null;
+	MemoryCache cache = MemoryCache.getInstance();
 
 	private ConnectionManager() {
 	}
@@ -53,10 +44,6 @@ public class ConnectionManager {
 	public PartnerConnection getConnection() {
 
 		try {
-
-			CacheFactory cacheFactory = CacheManager.getInstance().getCacheFactory();
-			cache = cacheFactory.createCache(new HashMap<Object, Object>());
-
 			/**
 			 * See if a session exists in the cache and if so, create a new
 			 * connection. Can't cache the request in app engine as the
@@ -122,9 +109,6 @@ public class ConnectionManager {
 					connection = Connector.newConnection(config);
 				}
 			}
-
-		} catch (CacheException e) {
-			log.info("cache exception=" + e.getMessage());
 		} catch (ConnectionException e) {
 			log.info("connection exception=" + e.getMessage());
 		}
@@ -159,12 +143,11 @@ public class ConnectionManager {
 	}
 
 	private static AccessCredentials getStoredAccessCredentials() {
-		// TODO: redo using CredentialsStorage
-		return CredentialsStorage.getInstance().getCredentials(CredentialsStorage.KEY_OAUTH_CREDENTIALS);
+		return (AccessCredentials) MemoryCache.getInstance().get(AccessCredentials.KEY_OAUTH_CREDENTIALS);
 	}
 
 	private static void storeAccessCredentials(AccessCredentials creds) {
-		CredentialsStorage.getInstance().putCredentials(CredentialsStorage.KEY_OAUTH_CREDENTIALS, creds);
+		MemoryCache.getInstance().put(AccessCredentials.KEY_OAUTH_CREDENTIALS, creds);
 	}
 
 	// caches the auth endpoint, service endpoint and session id
@@ -177,20 +160,10 @@ public class ConnectionManager {
 		log.info("Caching auth end point=" + authEndpoint);
 		log.info("Caching session id=" + sessionId);
 
-		Map<Object, Object> props = new HashMap<Object, Object>();
-		props.put(GCacheFactory.EXPIRATION_DELTA, 5400); // cache for 90 minutes
-		props.put(MemcacheService.SetPolicy.ADD_ONLY_IF_NOT_PRESENT, true);
-
-		try {
-			// cache the connection for appengine
-			CacheFactory cacheFactory = CacheManager.getInstance().getCacheFactory();
-			cache = cacheFactory.createCache(props);
-			cache.put(KEY_AUTH_POINT, authEndpoint);
-			cache.put(KEY_END_POINT, serviceEndpoint);
-			cache.put(KEY_SESSION, sessionId);
-		} catch (CacheException e) {
-			log.info("cache exception=" + e.getMessage());
-		}
+		// cache the connection for appengine
+		cache.put(KEY_AUTH_POINT, authEndpoint);
+		cache.put(KEY_END_POINT, serviceEndpoint);
+		cache.put(KEY_SESSION, sessionId);
 	}
 
 	public Object clone() throws CloneNotSupportedException {
