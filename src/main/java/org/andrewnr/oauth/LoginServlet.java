@@ -26,8 +26,8 @@ public class LoginServlet extends HttpServlet {
         
         // Reinit config from ENV variables before processing the Login
         OauthSettings.initConfig();
-        String oauthCallbackUrlPath = new StringBuilder(req.getScheme()).append(req.getServerName()).append("/callback").toString();
-        log.info("oauthCallbackUrlPath: req.getScheme() + req.getServerName() + '/callback' = " + oauthCallbackUrlPath);
+        String oauthCallbackUrlPath = new StringBuilder("https://").append(req.getServerName()).append("/callback").toString();
+        log.info("oauthCallbackUrlPath: 'https://' + req.getServerName() + '/callback' = " + oauthCallbackUrlPath);
         
         log.info("OauthSettings.HOST: " + OauthSettings.HOST);
         log.info("OauthSettings.URL_CALLBACK: " + OauthSettings.URL_CALLBACK);
